@@ -2,6 +2,10 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from .models import *
 
+# *** FILTERS ***
+from .filters import OrederFilter
+# ***************
+
 # Create your views here.
 
 def dasboard(request):
@@ -30,10 +34,16 @@ def customer(request, pk_test):
     orders = customer.order_set.all()
     total_orders = orders.count()
 
+    # *** FILTERS ***
+    myFilter = OrederFilter(request.GET, queryset=orders)
+    orders = myFilter.qs
+    # ***************
+
     context = {
         'customer': customer,
         'orders': orders,
         'total_orders': total_orders,
+        'myFilter': myFilter,
     }
     return render(request, 'accounts/customer.html', context)
 
@@ -46,11 +56,11 @@ def products(request):
     return render(request, 'accounts/products.html', context)
 
 
-# *** CRUD ***
+# *** CRUD with ModelForm ***
 from .forms import OrderForm
 from django.shortcuts import redirect
 
-# * CReate
+# * Ceate
 def createOrder(request):
     form = OrderForm()
     if request.method == 'POST':
@@ -92,3 +102,31 @@ def deleteOrder(request, pk):
         'item': order
     }
     return render(request, 'accounts/delete.html', context)
+
+
+#*** INLINE FORMSET ***
+from django.forms import inlineformset_factory
+
+# * Create formset * 
+def createCustomerOrders(request, pk):
+    OrderFormSet = inlineformset_factory(Customer, Order, fields=(
+        'product',
+        'status'
+    ), extra=10)
+
+    customer = Customer.objects.get(id=pk)
+    #form = OrderForm(initial={'customer': customer})
+    #formset = OrderFormSet(instance=customer)
+    formset = OrderFormSet(queryset=Order.objects.none() ,instance=customer)
+    if request.method == 'POST':
+        #form = OrderForm(request.POST)
+        formset = OrderFormSet(request.POST, instance=customer)
+        if formset.is_valid():
+            formset.save()
+            return redirect('/')
+    
+    context = {
+        'formset': formset,
+        'customer': customer
+    }
+    return render(request, 'accounts/order_formset.html', context)
