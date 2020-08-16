@@ -6,7 +6,7 @@ from django.shortcuts import redirect
 from django.contrib import messages
 
 # *** CRUD with ModelForm ***
-from .forms import OrderForm, ProductForm
+from .forms import OrderForm, ProductForm, TagForm
 
 # *** FILTERS ***
 from .filters import OrederFilter
@@ -86,18 +86,42 @@ def customer(request, pk_test):
 def products(request):
     products = Product.objects.all()
 
-    form = ProductForm()
+    form_product = ProductForm()
+    form_tag = TagForm()
+
     if request.method == 'POST':
-        form = ProductForm(request.POST)
-        if form.is_valid():
-            form.save()
-            name = form.cleaned_data.get('name')
+
+        form_product = ProductForm(request.POST)
+        if form_product.is_valid():
+            form_product.save()
+            name = form_product.cleaned_data.get('name')
             messages.success(request, f'Hai appena aggiunto il seguente prodotto {name}')
             return redirect('products')
+        else: 
+            form_product = ProductForm()
+
+        form_tag = TagForm(request.POST)
+        if form_tag.is_valid():
+            form_tag.save()
+        
+        #if form_product.is_valid():
+        #    form_product.save()
+        #    return redirect('products')
+            
+    
+
+    #if request.method == 'POST':
+    #    form_product = ProductForm(request.POST)
+    #    if form_product.is_valid():
+    #        form_product.save()
+    #        name = form_product.cleaned_data.get('name')
+    #        messages.success(request, f'Hai appena aggiunto il seguente prodotto {name}')
+    #        return redirect('products')
 
     context = {
         'products': products,
-        'form': form
+        'form_product': form_product,
+        'form_tag': form_tag,
     }
     return render(request, 'accounts/products.html', context)
 

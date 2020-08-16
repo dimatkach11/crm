@@ -44,11 +44,18 @@
             <div class="card card-body">
                 <form action="" method="post">
                     {% csrf_token %}
-                    {{ form.as_p }}
+                    <p>
+                        AddTag {{ form_tag.name }}
+                        <input class="btn btn-sm btn-success" type="submit" value="+">
+                    </p>
+                </form>
+                <br>
+                <form action="" method="post">
+                    {% csrf_token %}
+                    {{ form_product.as_p }}
                     <input class="btn btn-md btn-primary" type="submit" value="Add Product">
                 </form>
         </div>
-
     </div>
 
 {% endblock %}

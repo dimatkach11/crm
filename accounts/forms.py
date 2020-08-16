@@ -1,5 +1,5 @@
 from django.forms import ModelForm
-from .models import Order, Product
+from .models import Order, Product, Tag
 
 # *** Regitration and Login ***
 from django.contrib.auth.forms import UserCreationForm
@@ -11,7 +11,13 @@ class OrderForm(ModelForm):
         model = Order
         fields = '__all__' # '__all__' is equal to ['customer', 'product', 'date_created', 'status']
 
-        
+
+class TagForm(ModelForm):
+    class Meta:
+        model = Tag
+        fields = '__all__'
+
+
 class ProductForm(ModelForm):
     class Meta:
         model = Product
