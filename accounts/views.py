@@ -1,7 +1,6 @@
 from django.shortcuts import render
 
 # *** General import ***
-from django.http import HttpResponse
 from .models import *
 from django.shortcuts import redirect
 from django.contrib import messages
@@ -25,12 +24,20 @@ from django.contrib.auth import authenticate, login, logout
 # *** Login required decorator
 from django.contrib.auth.decorators import login_required
 
+# *** decorators
+from .decorators import unauthenticated_user, allowd_users, admin_only
+
+# *** Group model for different Users
+from django.contrib.auth.models import Group
+
 
 # Create your views here.
 # *** Main ***___________________________________________________________
 
 # * Login required decorator for dashboard page
 @login_required(login_url='login')
+#@allowd_users(allowed_roles=['admin'])
+@admin_only
 def dasboard(request):
     orders = Order.objects.all()
     customers = Customer.objects.all()
@@ -53,6 +60,7 @@ def dasboard(request):
 
 # * Login required decorator for customer page
 @login_required(login_url='login')
+@allowd_users(allowed_roles=['admin'])
 def customer(request, pk_test):
     customer = Customer.objects.get(id=pk_test)
 
@@ -74,6 +82,7 @@ def customer(request, pk_test):
 
 # * Login required decorator for products page
 @login_required(login_url='login')
+@allowd_users(allowed_roles=['admin'])
 def products(request):
     products = Product.objects.all()
     context = {
@@ -87,6 +96,7 @@ def products(request):
 # * Create
 # * Login required decorator for createOrder page
 @login_required(login_url='login')
+@allowd_users(allowed_roles=['admin'])
 def createOrder(request):
     form = OrderForm()
     if request.method == 'POST':
@@ -104,6 +114,7 @@ def createOrder(request):
 # * Update
 # * Login required decorator for updateOrder page
 @login_required(login_url='login')
+@allowd_users(allowed_roles=['admin'])
 def updateOrder(request, pk):
     order = Order.objects.get(id=pk)
     form = OrderForm(instance=order) # istance == mostra le informazioni dell'ordine selezionato
@@ -122,6 +133,7 @@ def updateOrder(request, pk):
 # * Delete
 # * Login required decorator for deleteOrder page
 @login_required(login_url='login')
+@allowd_users(allowed_roles=['admin'])
 def deleteOrder(request, pk):
     order = Order.objects.get(id=pk)
     if request.method == 'POST':
@@ -165,43 +177,46 @@ def createCustomerOrders(request, pk):
 # *** Regitration and Login ***__________________________________________
 
 # * Register User
+@unauthenticated_user
 def registerPage(request):
-    if request.user.is_authenticated:
-        return redirect('dashboard')
-    else:
-        form = CreateUserForm()
-        if request.method == 'POST':
-            form = CreateUserForm(request.POST)
-            if form.is_valid():
-                form.save()
-                # * Add a flashmessage
-                user = form.cleaned_data.get('username')
-                messages.success(request, f'Account was created for {user} ')
-                return redirect('login')
-        context = {
-            'form': form,
-        }
-        return render(request, 'accounts/register.html', context)
+    
+    form = CreateUserForm()
+    if request.method == 'POST':
+        form = CreateUserForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            # * Add a flashmessage
+            username = form.cleaned_data.get('username')
+            messages.success(request, f'Account was created for {username} ')
+
+            # * associate a group when someone registers
+            group = Group.objects.get(name='customer')
+            user.groups.add(group)
+            
+            return redirect('login')
+    context = {
+        'form': form,
+    }
+    return render(request, 'accounts/register.html', context)
 
 # * Login User
+@unauthenticated_user
 def loginPage(request):
-    if request.user.is_authenticated:
-        return redirect('dashboard')
-    else:
-        if request.method == 'POST':
-            username = request.POST.get('username')
-            password = request.POST.get('password')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
 
-            user = authenticate(request, username=username, password=password)
+        user = authenticate(request, username=username, password=password)
 
-            if user is not None:
-                login(request, user)
-                return redirect('dashboard')
-            else:
-                messages.info(request, 'Username or password is incorrect')
+        if user is not None:
+            login(request, user)
+            return redirect('dashboard')
+        else:
+            messages.info(request, 'Username or password is incorrect')
 
-        context = {}
-        return render(request, 'accounts/login.html', context)
+    context = {}
+    return render(request, 'accounts/login.html', context)
 
 # * Logout User
 # * Login required decorator for logoutUser page
@@ -209,3 +224,9 @@ def loginPage(request):
 def logoutUser(request):
     logout(request)
     return redirect('login')
+
+
+# *** User Page ***
+def userPage(request):
+    context = {}
+    return render(request, 'accounts/user.html', context)
