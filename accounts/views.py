@@ -6,7 +6,7 @@ from django.shortcuts import redirect
 from django.contrib import messages
 
 # *** CRUD with ModelForm ***
-from .forms import OrderForm
+from .forms import OrderForm, ProductForm
 
 # *** FILTERS ***
 from .filters import OrederFilter
@@ -25,7 +25,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 
 # *** decorators
-from .decorators import unauthenticated_user, allowd_users, admin_only
+from .decorators import unauthenticated_user, allowed_users, admin_only
 
 # *** Group model for different Users
 from django.contrib.auth.models import Group
@@ -36,7 +36,7 @@ from django.contrib.auth.models import Group
 
 # * Login required decorator for dashboard page
 @login_required(login_url='login')
-#@allowd_users(allowed_roles=['admin'])
+#@allowed_users(allowed_roles=['admin'])
 @admin_only
 def dasboard(request):
     orders = Order.objects.all()
@@ -60,7 +60,7 @@ def dasboard(request):
 
 # * Login required decorator for customer page
 @login_required(login_url='login')
-@allowd_users(allowed_roles=['admin'])
+@allowed_users(allowed_roles=['admin'])
 def customer(request, pk_test):
     customer = Customer.objects.get(id=pk_test)
 
@@ -82,11 +82,22 @@ def customer(request, pk_test):
 
 # * Login required decorator for products page
 @login_required(login_url='login')
-@allowd_users(allowed_roles=['admin'])
+@allowed_users(allowed_roles=['admin'])
 def products(request):
     products = Product.objects.all()
+
+    form = ProductForm()
+    if request.method == 'POST':
+        form = ProductForm(request.POST)
+        if form.is_valid():
+            form.save()
+            name = form.cleaned_data.get('name')
+            messages.success(request, f'Hai appena aggiunto il seguente prodotto {name}')
+            return redirect('products')
+
     context = {
-        'products': products
+        'products': products,
+        'form': form
     }
     return render(request, 'accounts/products.html', context)
 
@@ -96,7 +107,7 @@ def products(request):
 # * Create
 # * Login required decorator for createOrder page
 @login_required(login_url='login')
-@allowd_users(allowed_roles=['admin'])
+@allowed_users(allowed_roles=['admin'])
 def createOrder(request):
     form = OrderForm()
     if request.method == 'POST':
@@ -114,7 +125,7 @@ def createOrder(request):
 # * Update
 # * Login required decorator for updateOrder page
 @login_required(login_url='login')
-@allowd_users(allowed_roles=['admin'])
+@allowed_users(allowed_roles=['admin'])
 def updateOrder(request, pk):
     order = Order.objects.get(id=pk)
     form = OrderForm(instance=order) # istance == mostra le informazioni dell'ordine selezionato
@@ -133,7 +144,7 @@ def updateOrder(request, pk):
 # * Delete
 # * Login required decorator for deleteOrder page
 @login_required(login_url='login')
-@allowd_users(allowed_roles=['admin'])
+@allowed_users(allowed_roles=['admin'])
 def deleteOrder(request, pk):
     order = Order.objects.get(id=pk)
     if request.method == 'POST':
@@ -227,6 +238,19 @@ def logoutUser(request):
 
 
 # *** User Page ***
+@login_required
+@allowed_users(allowed_roles=['customer'])
 def userPage(request):
-    context = {}
+
+    orders = request.user.customer.order_set.all()
+    total_orders = orders.count()
+    delivered = orders.filter(status='Delivered').count()
+    pending = orders.filter(status='Pending').count()
+
+    context = {
+        'orders': orders,
+        'total_orders': total_orders,
+        'delivered': delivered,
+        'pending': pending,
+    }
     return render(request, 'accounts/user.html', context)

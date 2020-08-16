@@ -10,6 +10,13 @@
             <div class="card card-body">
                 <h5>Products</h5>
             </div>
+            
+            {% for message in messages %}
+                <div class="card card-body">
+                    {{ message }}
+                </div>
+            {% endfor %}
+            
             <div class="card card-body">
                 <table class="table">
                     <tr>
@@ -27,6 +34,19 @@
                     {% endfor %}
                 </table>
             </div>
+        </div>
+
+    </div>
+
+    <div class="row">
+
+        <div class="col-md">
+            <div class="card card-body">
+                <form action="" method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <input class="btn btn-md btn-primary" type="submit" value="Add Product">
+                </form>
         </div>
 
     </div>
