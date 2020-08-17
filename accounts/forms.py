@@ -1,5 +1,5 @@
 from django.forms import ModelForm
-from .models import Order, Product, Tag
+from .models import Order, Product, Tag, Customer
 
 # *** Regitration and Login ***
 from django.contrib.auth.forms import UserCreationForm
@@ -30,3 +30,11 @@ class CreateUserForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
+
+
+# * Account page
+class CustomerForm(ModelForm):
+    class Meta:
+        model = Customer
+        fields = '__all__'
+        exclude = ['user']

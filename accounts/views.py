@@ -5,8 +5,8 @@ from .models import *
 from django.shortcuts import redirect
 from django.contrib import messages
 
-# *** CRUD with ModelForm ***
-from .forms import OrderForm, ProductForm, TagForm
+# *** ModelForm ***
+from .forms import OrderForm, ProductForm, TagForm, CustomerForm
 
 # *** FILTERS ***
 from .filters import OrederFilter
@@ -32,7 +32,7 @@ from django.contrib.auth.models import Group
 
 
 # Create your views here.
-# *** Main ***___________________________________________________________
+#! *** Main ***___________________________________________________________
 
 # * Login required decorator for dashboard page
 @login_required(login_url='login')
@@ -104,19 +104,6 @@ def products(request):
         if form_tag.is_valid():
             form_tag.save()
         
-        #if form_product.is_valid():
-        #    form_product.save()
-        #    return redirect('products')
-            
-    
-
-    #if request.method == 'POST':
-    #    form_product = ProductForm(request.POST)
-    #    if form_product.is_valid():
-    #        form_product.save()
-    #        name = form_product.cleaned_data.get('name')
-    #        messages.success(request, f'Hai appena aggiunto il seguente prodotto {name}')
-    #        return redirect('products')
 
     context = {
         'products': products,
@@ -126,7 +113,7 @@ def products(request):
     return render(request, 'accounts/products.html', context)
 
 
-# *** CRUD with ModelForm ***____________________________________________
+#! *** CRUD Order with ModelForm ***____________________________________________
 
 # * Create
 # * Login required decorator for createOrder page
@@ -181,7 +168,7 @@ def deleteOrder(request, pk):
     return render(request, 'accounts/delete.html', context)
 
 
-#*** INLINE FORMSET ***__________________________________________________
+#! *** INLINE FORMSET ***__________________________________________________
 # * Create formset * 
 # * Login required decorator for createCustomerOrders page
 @login_required(login_url='login')
@@ -209,7 +196,7 @@ def createCustomerOrders(request, pk):
     return render(request, 'accounts/order_formset.html', context)
 
 
-# *** Regitration and Login ***__________________________________________
+#! *** Regitration and Login ***__________________________________________
 
 # * Register User
 @unauthenticated_user
@@ -227,6 +214,11 @@ def registerPage(request):
             # * associate a group when someone registers
             group = Group.objects.get(name='customer')
             user.groups.add(group)
+
+            Customer.objects.create(
+                user=user,
+                name=user.username,
+            )
             
             return redirect('login')
     context = {
@@ -278,3 +270,18 @@ def userPage(request):
         'pending': pending,
     }
     return render(request, 'accounts/user.html', context)
+
+# * Account page *
+@login_required
+@allowed_users(allowed_roles=['customer'])
+def userAccount(request):
+    user = request.user.customer
+    form = CustomerForm(instance=user)
+
+    if request.method == 'POST':
+        form = CustomerForm(request.POST, request.FILES, instance=user) # request.FILES because we sended files
+        if form.is_valid():
+            form.save()
+
+    context = {'form': form}
+    return render(request, 'accounts/accounts_settings.html', context)
