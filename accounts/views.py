@@ -201,7 +201,7 @@ def createCustomerOrders(request, pk):
 # * Register User
 @unauthenticated_user
 def registerPage(request):
-    
+
     form = CreateUserForm()
     if request.method == 'POST':
         form = CreateUserForm(request.POST)
@@ -211,15 +211,15 @@ def registerPage(request):
             username = form.cleaned_data.get('username')
             messages.success(request, f'Account was created for {username} ')
 
-            # * associate a group when someone registers
-            group = Group.objects.get(name='customer')
-            user.groups.add(group)
+            # associate a group when someone registers - resolved in signals.py
+            #group = Group.objects.get(name='customer')
+            #user.groups.add(group)
+            # Create customer after user registartion
+            #Customer.objects.create(
+            #    user=user,
+            #    name=user.username,
+            #)
 
-            Customer.objects.create(
-                user=user,
-                name=user.username,
-            )
-            
             return redirect('login')
     context = {
         'form': form,
